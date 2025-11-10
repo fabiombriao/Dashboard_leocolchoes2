@@ -373,6 +373,28 @@
                 return acc;
             }, {});
 
+            const DEFAULTS = {
+                supabaseUrl: 'https://ckmtkcpvqooukdzqrsyt.supabase.co',
+                supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbXRrY3B2cW9vdWtkenFyc3l0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2NTg0MzEsImV4cCI6MjA3NzIzNDQzMX0.GrWYqyYPkjkUMTiWNtEmxLwU6kF6-HCiY382-aM57yE',
+                leadsTableName: 'leads',
+                leadsIdColumn: 'numero',
+                qualifiedColumn: 'atendimento_finalizado',
+                followupColumn: 'followup',
+                lastInboundColumn: 'last_inbound_at',
+                lastOutboundColumn: 'last_outbound_at',
+                chatsTableName: 'chats_sdr',
+                chatsLeadIdColumn: 'session_id',
+                jsonMessageColumn: 'message',
+                jsonContentKey: 'content',
+                jsonSenderKey: 'type',
+                humanSenderValue: 'human',
+                schedulingKeywords: 'confirmado, agendado, combinado',
+                incomingShotsTableName: 'disparo_entrada',
+                shotsTableName: 'disparo_saida',
+                shotAttemptColumn: 'created_at',
+                shotCompletedColumn: 'conseguiu',
+            };
+
             // --- Elementos do Dashboard ---
             const totalLeadsEl = document.getElementById('total-leads-value');
             const qualifiedLeadsEl = document.getElementById('qualified-leads-value');
@@ -413,7 +435,10 @@
 
                 try {
                     const configJson = atob(encodedConfig);
-                    const config = JSON.parse(configJson);
+                    const partialConfig = JSON.parse(configJson);
+                    
+                    // Merge partial config from URL with defaults to get the full config
+                    const config = { ...DEFAULTS, ...partialConfig };
                     
                     if (config.clientName) {
                         mainTitle.textContent = `Dashboard de Leads - ${config.clientName}`;
@@ -421,8 +446,7 @@
 
                     // Preencher o formulário (oculto) para que a lógica de conexão funcione
                     Object.keys(config).forEach(key => {
-                        const camelKey = key.replace(/-([a-z])/g, g => g[1].toUpperCase());
-                        const inputId = camelKey.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
+                        const inputId = key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
                         if(allInputs[inputId]) {
                             allInputs[inputId].value = config[key];
                         }
@@ -559,14 +583,26 @@
                     } else if (target.classList.contains('share-btn')) {
                          const config = configs.find(c => c.id === id);
                          if (config) {
-                            const configToShare = { ...config };
-                            delete configToShare.id; // Não precisa do ID no link
-                            const jsonString = JSON.stringify(configToShare);
+                            const shortenedConfig = {};
+
+                            // Always include essential fields
+                            shortenedConfig.clientName = config.clientName;
+                            shortenedConfig.supabaseUrl = config.supabaseUrl;
+                            shortenedConfig.supabaseKey = config.supabaseKey;
+
+                            // Include other fields only if they differ from the default value
+                            for (const key in DEFAULTS) {
+                                if (config.hasOwnProperty(key) && config[key] !== DEFAULTS[key]) {
+                                    shortenedConfig[key] = config[key];
+                                }
+                            }
+                            
+                            const jsonString = JSON.stringify(shortenedConfig);
                             const encoded = btoa(jsonString);
                             const baseUrl = window.location.href.split('#')[0];
                             const url = `${baseUrl}#config=${encoded}`;
                             navigator.clipboard.writeText(url).then(() => {
-                                showStatus(`Link para "${config.clientName}" copiado para a área de transferência!`, 'success');
+                                showStatus(`Link curto para "${config.clientName}" copiado para a área de transferência!`, 'success');
                             }).catch(() => {
                                 showStatus(`Não foi possível copiar o link.`, 'error');
                             });
