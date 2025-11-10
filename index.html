@@ -180,8 +180,8 @@
                             <input type="text" id="qualified-column" placeholder="atendimento_finalizado" value="atendimento_finalizado">
                         </div>
                          <div class="form-group">
-                            <label for="recovered-column-prefix">Prefixo da Coluna de Recuperado</label>
-                            <input type="text" id="recovered-column-prefix" placeholder="ex: recontact_" value="recontact_">
+                            <label for="followup-column">Coluna de Follow-up (Booleano/Timestamp)</label>
+                            <input type="text" id="followup-column" placeholder="followup" value="followup">
                         </div>
                         <div class="form-group">
                             <label for="last-inbound-column">Coluna de Última Mensagem Recebida (Timestamp)</label>
@@ -227,9 +227,13 @@
 
                     <fieldset>
                         <legend>Análise de Disparos (Opcional)</legend>
+                         <div class="form-group">
+                            <label for="incoming-shots-table-name">Tabela de Disparos de Entrada (Pendentes)</label>
+                            <input type="text" id="incoming-shots-table-name" placeholder="disparo_entrada" value="disparo_entrada">
+                        </div>
                         <div class="form-group">
-                            <label for="shots-table-name">Tabela de Disparos</label>
-                            <input type="text" id="shots-table-name" placeholder="disparos" value="disparo_saida">
+                            <label for="shots-table-name">Tabela de Disparos de Saída (Histórico)</label>
+                            <input type="text" id="shots-table-name" placeholder="disparo_saida" value="disparo_saida">
                         </div>
                         <div class="form-group">
                             <label for="shot-attempt-column">Coluna de Tentativa de Disparo (Timestamp não nulo)</label>
@@ -259,14 +263,39 @@
             </div>
             
             <section id="dashboard-grid" class="hidden">
+                <div class="metric-card">
+                    <h2>Total de Disparos Planejados</h2>
+                    <p id="total-planned-shots-value">-</p>
+                </div>
+                <div class="metric-card">
+                    <h2>Disparos Pendentes</h2>
+                    <p id="pending-shots-value">-</p>
+                </div>
+                <div class="metric-card">
+                    <h2>
+                        <span>Disparos com Sucesso</span>
+                        <span id="successful-shots-subtitle" class="metric-card-subtitle"></span>
+                    </h2>
+                    <p id="successful-shots-value">-</p>
+                </div>
                  <div class="metric-card">
-                    <h2>Total de Leads</h2>
-                    <p id="total-leads-value">-</p>
+                    <h2>
+                        <span>Disparos com Falha</span>
+                        <span id="failed-shots-subtitle" class="metric-card-subtitle"></span>
+                    </h2>
+                    <p id="failed-shots-value">-</p>
+                </div>
+                 <div class="metric-card">
+                    <h2>
+                        <span>Leads de Disparos</span>
+                        <span id="shots-with-reply-subtitle" class="metric-card-subtitle"></span>
+                    </h2>
+                    <p id="shots-with-reply-value">-</p>
                 </div>
                 <div class="metric-card">
                     <h2>
                         <span>Leads Qualificados</span>
-                        <span id="qualified-leads-subtitle" class="metric-card-subtitle"></span>
+                        <span id="qualified-leads-subtitle" class="metric-card-subtitle">(Qualificados / Disparos Concluídos)</span>
                     </h2>
                     <p id="qualified-leads-value">-</p>
                 </div>
@@ -292,18 +321,8 @@
                     <p id="recovered-value">-</p>
                 </div>
                 <div class="metric-card">
-                    <h2>
-                        <span>Disparos Concluídos</span>
-                        <span id="completed-shots-subtitle" class="metric-card-subtitle"></span>
-                    </h2>
-                    <p id="completed-shots-value">-</p>
-                </div>
-                <div class="metric-card">
-                    <h2>
-                        <span>Leads de Disparos</span>
-                        <span id="shots-with-reply-subtitle" class="metric-card-subtitle"></span>
-                    </h2>
-                    <p id="shots-with-reply-value">-</p>
+                    <h2>Total de Leads</h2>
+                    <p id="total-leads-value">-</p>
                 </div>
             </section>
         </main>
@@ -343,11 +362,11 @@
             
             const allInputIds = [
                 'client-name', 'supabase-url', 'supabase-key', 'leads-table-name', 
-                'leads-id-column', 'qualified-column', 'recovered-column-prefix', 
+                'leads-id-column', 'qualified-column', 'followup-column', 
                 'last-inbound-column', 'last-outbound-column', 'chats-table-name', 
                 'chats-lead-id-column', 'json-message-column', 'json-content-key', 
                 'json-sender-key', 'human-sender-value', 'scheduling-keywords', 
-                'shots-table-name', 'shot-attempt-column', 'shot-completed-column'
+                'incoming-shots-table-name', 'shots-table-name', 'shot-attempt-column', 'shot-completed-column'
             ];
             const allInputs = allInputIds.reduce((acc, id) => {
                 acc[id] = document.getElementById(id);
@@ -364,10 +383,15 @@
             const scheduledSubtitleEl = document.getElementById('scheduled-subtitle');
             const recoveredEl = document.getElementById('recovered-value');
             const recoveredSubtitleEl = document.getElementById('recovered-subtitle');
-            const completedShotsEl = document.getElementById('completed-shots-value');
-            const completedShotsSubtitleEl = document.getElementById('completed-shots-subtitle');
             const shotsWithReplyEl = document.getElementById('shots-with-reply-value');
             const shotsWithReplySubtitleEl = document.getElementById('shots-with-reply-subtitle');
+            // Novos elementos de Disparos
+            const totalPlannedShotsEl = document.getElementById('total-planned-shots-value');
+            const pendingShotsEl = document.getElementById('pending-shots-value');
+            const successfulShotsEl = document.getElementById('successful-shots-value');
+            const successfulShotsSubtitleEl = document.getElementById('successful-shots-subtitle');
+            const failedShotsEl = document.getElementById('failed-shots-value');
+            const failedShotsSubtitleEl = document.getElementById('failed-shots-subtitle');
 
             let supabaseClient = null;
             let realtimeChannels = [];
@@ -627,9 +651,9 @@
                 console.log(`Fetching metrics from table: "${config.leadsTableName}"`);
                 if (!supabaseClient) throw new Error('Supabase client not initialized.');
                 const {
-                    leadsTableName, leadsIdColumn, qualifiedColumn, recoveredColumnPrefix, lastInboundColumn, lastOutboundColumn,
+                    leadsTableName, leadsIdColumn, qualifiedColumn, followupColumn,
                     chatsTableName, chatsLeadIdColumn, jsonMessageColumn, jsonContentKey, jsonSenderKey, humanSenderValue, schedulingKeywords,
-                    shotsTableName, shotAttemptColumn, shotCompletedColumn
+                    incomingShotsTableName, shotsTableName, shotAttemptColumn, shotCompletedColumn
                 } = config;
 
                 // 1. Fetch main leads data.
@@ -643,14 +667,9 @@
                     throw new Error(`Erro ao buscar dados de leads: ${leadsError.message}`);
                 }
                 
-                if (!leadsData || totalLeads === 0) {
-                    updateUI({ 
-                        total: 0, qualified: { numerator: 0, denominator: 0 },
-                        secondMessageData: { numerator: 0, denominator: 0 }, scheduled: { numerator: 0, denominator: 0 },
-                        recovered: { numerator: 0, denominator: 0 }, shotsData: { attempts: 0, completed: 0 },
-                        shotsWithReplyData: { numerator: 0, denominator: 0 }
-                    });
-                    return;
+                if (!leadsData) {
+                    // Handle no leads data gracefully
+                    console.warn("No leads data found. Some metrics will be zero.");
                 }
                 
                 const validLeadIds = new Set(leadsData.map(l => normalizePhoneNumber(l[leadsIdColumn])).filter(Boolean));
@@ -677,28 +696,53 @@
                     return supabaseClient.from(chatsTableName).select(chatsLeadIdColumn).or(orFilter);
                 };
 
-                const fetchShotsData = async () => {
-                    const emptyResult = { attempts: 0, completed: 0, successfulLeads: [] };
+                const fetchOutgoingShotsData = async () => {
+                    const emptyResult = { attempts: 0, completed: 0, failed: 0, successfulLeads: [] };
                     if (!shotsTableName || !shotAttemptColumn || !shotCompletedColumn) return emptyResult;
+
                     const { count: attempts, error: attemptsError } = await supabaseClient.from(shotsTableName).select('*', { count: 'exact', head: true }).not(shotAttemptColumn, 'is', null);
                     if (attemptsError) throw new Error(`Erro ao contar tentativas de disparo: ${attemptsError.message}`);
-                    const { data: completedData, error: completedError } = await supabaseClient.from(shotsTableName).select(leadsIdColumn).not(shotAttemptColumn, 'is', null).eq(shotCompletedColumn, true);
+
+                    const { data: completedData, count: completed, error: completedError } = await supabaseClient.from(shotsTableName).select(leadsIdColumn, { count: 'exact' }).not(shotAttemptColumn, 'is', null).eq(shotCompletedColumn, true);
                     if (completedError) throw new Error(`Erro ao buscar disparos concluídos: ${completedError.message}`);
-                    const completed = completedData ? completedData.length : 0;
+
+                    const { count: failed, error: failedError } = await supabaseClient.from(shotsTableName).select('*', { count: 'exact', head: true }).not(shotAttemptColumn, 'is', null).eq(shotCompletedColumn, false);
+                    if (failedError) throw new Error(`Erro ao contar disparos com falha: ${failedError.message}`);
+                    
                     const successfulLeads = completedData ? completedData.map(item => normalizePhoneNumber(item[leadsIdColumn])) : [];
-                    return { attempts, completed, successfulLeads };
+                    
+                    return { attempts: attempts || 0, completed: completed || 0, failed: failed || 0, successfulLeads };
+                };
+                
+                const fetchIncomingShotsCount = async () => {
+                    if (!incomingShotsTableName) return 0;
+                    const { count, error } = await supabaseClient.from(incomingShotsTableName).select('*', { count: 'exact', head: true });
+                    if (error) throw new Error(`Erro ao contar disparos pendentes: ${error.message}`);
+                    return count || 0;
                 };
             
-                const [ allMessages, { data: scheduledData, error: scheduledError }, shotsData ] = await Promise.all([
-                    fetchAllChatMessages(), fetchScheduledData(), fetchShotsData()
+                const [ allMessages, { data: scheduledData, error: scheduledError }, outgoingShots, pendingShots ] = await Promise.all([
+                    fetchAllChatMessages(), fetchScheduledData(), fetchOutgoingShotsData(), fetchIncomingShotsCount()
                 ]);
             
                 if (scheduledError) throw new Error(`Erro ao buscar agendamentos: ${scheduledError.message}`);
                 
-                const successfulShotLeadIds = new Set(shotsData.successfulLeads.filter(Boolean));
-                const leadsFromShotsIds = new Set([...successfulShotLeadIds].filter(id => validLeadIds.has(id)));
+                const totalPlannedShots = (outgoingShots.attempts || 0) + (pendingShots || 0);
+
+                const successfulShotLeadIdsSet = new Set(outgoingShots.successfulLeads.filter(Boolean));
+                const qualifiedLeadIdsSet = new Set(
+                    leadsData
+                        .filter(lead => qualifiedColumn && lead[qualifiedColumn] === true)
+                        .map(lead => normalizePhoneNumber(lead[leadsIdColumn]))
+                        .filter(Boolean)
+                );
+
+                const qualifiedFromShotsNumerator = [...successfulShotLeadIdsSet].filter(id => qualifiedLeadIdsSet.has(id)).length;
+                const qualifiedFromShotsDenominator = outgoingShots.completed;
+
+                const leadsFromShotsIds = new Set([...successfulShotLeadIdsSet].filter(id => validLeadIds.has(id)));
                 const shotsWithReplyNumerator = leadsFromShotsIds.size;
-                const shotsWithReplyDenominator = successfulShotLeadIds.size;
+                const shotsWithReplyDenominator = successfulShotLeadIdsSet.size;
                 
                 const messageCountsByLead = allMessages.reduce((acc, msg) => {
                     const leadId = normalizePhoneNumber(msg[chatsLeadIdColumn]);
@@ -711,40 +755,44 @@
                 const scheduledLeads = new Set(scheduledData ? scheduledData.map(item => normalizePhoneNumber(item[chatsLeadIdColumn])) : []);
                 const scheduledCount = scheduledLeads.size;
                 
-                const qualifiedCount = qualifiedColumn ? leadsData.filter(row => row[qualifiedColumn] === true).length : 0;
-                
-                const recoveredCount = recoveredColumnPrefix && lastInboundColumn && lastOutboundColumn
-                    ? leadsData.filter(lead => {
-                        const recontactSent = Object.keys(lead).some(key => key.startsWith(recoveredColumnPrefix) && lead[key] === true);
-                        const lastInbound = lead[lastInboundColumn];
-                        const lastOutbound = lead[lastOutboundColumn];
-                        return recontactSent && lastInbound && lastOutbound && new Date(lastInbound) > new Date(lastOutbound);
-                    }).length
+                const recoveredCount = followupColumn && qualifiedColumn
+                    ? leadsData.filter(lead => lead[followupColumn] && lead[qualifiedColumn] === true).length
                     : 0;
                 
                 updateUI({
-                    total: totalLeads,
-                    qualified: { numerator: qualifiedCount, denominator: totalLeads },
+                    total: totalLeads || 0,
+                    totalPlanned: totalPlannedShots,
+                    pending: pendingShots,
+                    qualified: { numerator: qualifiedFromShotsNumerator, denominator: qualifiedFromShotsDenominator },
                     secondMessageData: { numerator: secondMessageNumerator, denominator: secondMessageDenominator },
-                    scheduled: { numerator: scheduledCount, denominator: totalLeads },
-                    recovered: { numerator: recoveredCount, denominator: totalLeads },
-                    shotsData: { attempts: shotsData.attempts, completed: shotsData.completed },
+                    scheduled: { numerator: scheduledCount, denominator: shotsWithReplyNumerator },
+                    recovered: { numerator: recoveredCount, denominator: shotsWithReplyNumerator },
+                    shotsData: { 
+                        attempts: outgoingShots.attempts, 
+                        completed: outgoingShots.completed,
+                        failed: outgoingShots.failed
+                    },
                     shotsWithReplyData: { numerator: shotsWithReplyNumerator, denominator: shotsWithReplyDenominator }
                 });
             }
 
             function updateUI(metrics) {
                 totalLeadsEl.textContent = metrics.total;
+                totalPlannedShotsEl.textContent = metrics.totalPlanned;
+                pendingShotsEl.textContent = metrics.pending;
+                
                 const updateCard = (el, subEl, { numerator, denominator }) => {
                     const percent = denominator > 0 ? (numerator / denominator) * 100 : 0;
                     el.textContent = `${percent.toFixed(1)}%`;
                     subEl.textContent = `(${numerator} de ${denominator})`;
                 };
+                
                 updateCard(qualifiedLeadsEl, qualifiedLeadsSubtitleEl, metrics.qualified);
                 updateCard(secondMessageEl, secondMessageSubtitleEl, metrics.secondMessageData);
                 updateCard(scheduledEl, scheduledSubtitleEl, metrics.scheduled);
                 updateCard(recoveredEl, recoveredSubtitleEl, metrics.recovered);
-                updateCard(completedShotsEl, completedShotsSubtitleEl, { numerator: metrics.shotsData.completed, denominator: metrics.shotsData.attempts });
+                updateCard(successfulShotsEl, successfulShotsSubtitleEl, { numerator: metrics.shotsData.completed, denominator: metrics.shotsData.attempts });
+                updateCard(failedShotsEl, failedShotsSubtitleEl, { numerator: metrics.shotsData.failed, denominator: metrics.shotsData.attempts });
                 updateCard(shotsWithReplyEl, shotsWithReplySubtitleEl, metrics.shotsWithReplyData);
             }
 
@@ -754,7 +802,7 @@
                     realtimeChannels = [];
                 }
                 
-                const tablesToSubscribe = [config.leadsTableName, config.chatsTableName, config.shotsTableName].filter(Boolean);
+                const tablesToSubscribe = [config.leadsTableName, config.chatsTableName, config.shotsTableName, config.incomingShotsTableName].filter(Boolean);
                 const uniqueTables = [...new Set(tablesToSubscribe)];
 
                 uniqueTables.forEach(tableName => {
