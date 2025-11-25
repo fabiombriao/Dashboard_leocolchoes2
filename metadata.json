@@ -1,5 +1,5 @@
 {
-  "name": "Dashboard_leocolchoes3",
+  "name": "Dashboard_leocolchoes6",
   "description": "A comprehensive, real-time dashboard for lead metrics, integrated with Supabase. It features a configuration interface for Supabase credentials, displays key performance indicators in styled cards, and updates automatically using Supabase Realtime subscriptions. The dashboard is designed with a modern, responsive, and dark-mode-ready UI.",
   "requestFramePermissions": []
 }

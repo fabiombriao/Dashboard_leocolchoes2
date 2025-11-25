@@ -101,7 +101,8 @@
 
         .button-group { display: flex; gap: var(--spacing-md); margin-top: var(--spacing-md); }
 
-        button { width: 100%; padding: var(--spacing-sm) var(--spacing-lg); border: none; border-radius: var(--border-radius-base); background-color: var(--primary-color); color: white; font-size: 16px; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; }
+        button { padding: var(--spacing-sm) var(--spacing-lg); border: none; border-radius: var(--border-radius-base); background-color: var(--primary-color); color: white; font-size: 16px; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; }
+        .button-group button { width: 100%; }
         button:hover { background-color: var(--primary-color-hover); }
         button:disabled { background-color: var(--text-light-color); cursor: not-allowed; }
         button.secondary { background-color: var(--secondary-color); }
@@ -114,7 +115,7 @@
         #dashboard-grid { display: grid; gap: var(--spacing-xl); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
         .metric-card { background-color: var(--card-background-color); padding: var(--spacing-xl); border-radius: var(--border-radius-large); box-shadow: var(--shadow-base); transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .metric-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-hover); }
-        .metric-card h2 { font-size: 14px; font-weight: 500; color: var(--text-light-color); display: flex; justify-content: space-between; align-items: center; }
+        .metric-card h2 { font-size: 14px; font-weight: 500; color: var(--text-light-color); display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .metric-card-subtitle { font-size: 12px; font-weight: 400; }
         .metric-card p { font-size: 30px; font-weight: 600; margin-top: var(--spacing-xs); color: var(--primary-color); }
 
@@ -132,6 +133,42 @@
         .client-item-actions { display: flex; gap: var(--spacing-xs); }
         .client-item-actions button { width: auto; font-size: 12px; padding: var(--spacing-xs) var(--spacing-sm); }
         .client-item-actions .delete-btn { background-color: var(--error-color); }
+
+        /* Date Filter Styles */
+        #date-filter-section {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-2xl);
+            background-color: var(--card-background-color);
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius-large);
+            box-shadow: var(--shadow-base);
+        }
+        #date-filter-section .date-filter-buttons button {
+            background-color: var(--secondary-color);
+        }
+        #date-filter-section .date-filter-buttons button.active {
+            background-color: var(--primary-color);
+        }
+        #date-filter-section .date-filter-custom {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+        #date-filter-section .date-filter-custom input[type="date"] {
+             padding: 8px;
+             border: 1px solid var(--border-color);
+             border-radius: var(--border-radius-base);
+             background-color: var(--background-color);
+             color: var(--text-color);
+        }
+        #date-filter-section .date-filter-custom button {
+            font-size: 14px;
+            padding: 9px var(--spacing-sm);
+        }
     </style>
 </head>
 <body>
@@ -183,6 +220,10 @@
                             <label for="followup-column">Coluna de Follow-up (Booleano/Timestamp)</label>
                             <input type="text" id="followup-column" placeholder="followup" value="followup">
                         </div>
+                         <div class="form-group">
+                            <label for="leads-created-at-column">Coluna de Criação do Lead (Timestamp)</label>
+                            <input type="text" id="leads-created-at-column" placeholder="created_at" value="created_at">
+                        </div>
                         <div class="form-group">
                             <label for="last-inbound-column">Coluna de Última Mensagem Recebida (Timestamp)</label>
                             <input type="text" id="last-inbound-column" placeholder="last_inbound_at" value="last_inbound_at">
@@ -198,6 +239,10 @@
                          <div class="form-group">
                             <label for="chats-table-name">Tabela de Chats (ex: chats_sdr)</label>
                             <input type="text" id="chats-table-name" placeholder="chats_sdr" value="chats_sdr">
+                        </div>
+                         <div class="form-group">
+                            <label for="chats-created-at-column">Coluna de Criação do Chat (Timestamp)</label>
+                            <input type="text" id="chats-created-at-column" placeholder="created_at" value="created_at">
                         </div>
                         <div class="form-group">
                             <label for="chats-lead-id-column">Coluna de ID do Lead na Tabela de Chats</label>
@@ -223,6 +268,10 @@
                             <label for="scheduling-keywords">Palavras-chave de Agendamento (separadas por vírgula)</label>
                             <input type="text" id="scheduling-keywords" placeholder="confirmado, agendado, combinado" value="confirmado, agendado, combinado">
                         </div>
+                        <div class="form-group">
+                            <label for="off-hours-keyword">Palavra-chave Qualificação Fora do Horário (ex: *Lead qualificado*)</label>
+                            <input type="text" id="off-hours-keyword" placeholder="*Lead qualificado*" value="*Lead qualificado*">
+                        </div>
                     </fieldset>
 
                     <fieldset>
@@ -245,6 +294,22 @@
                         </div>
                     </fieldset>
 
+                    <fieldset>
+                        <legend>Análise de Performance da IA (Opcional)</legend>
+                        <div class="form-group">
+                            <label for="n8n-executions-table-name">Tabela de Execuções (ex: n8n_executions)</label>
+                            <input type="text" id="n8n-executions-table-name" placeholder="n8n_executions" value="n8n_executions">
+                        </div>
+                        <div class="form-group">
+                            <label for="execution-started-at-column">Coluna de Início da Execução (Timestamp)</label>
+                            <input type="text" id="execution-started-at-column" placeholder="started_at" value="started_at">
+                        </div>
+                        <div class="form-group">
+                            <label for="execution-finished-at-column">Coluna de Fim da Execução (Timestamp)</label>
+                            <input type="text" id="execution-finished-at-column" placeholder="stopped_at" value="stopped_at">
+                        </div>
+                    </fieldset>
+
                     <div class="button-group">
                         <button type="submit" id="connect-btn">Conectar e Testar</button>
                         <button type="button" id="save-client-btn" class="secondary">Salvar Configuração do Cliente</button>
@@ -261,6 +326,21 @@
             <div id="loader" class="hidden">
                 <div class="spinner"></div>
             </div>
+
+            <section id="date-filter-section" class="hidden">
+                <div class="date-filter-buttons">
+                    <button data-period="all">Todos</button>
+                    <button data-period="today">Hoje</button>
+                    <button data-period="week">Esta Semana</button>
+                    <button data-period="month">Este Mês</button>
+                </div>
+                <div class="date-filter-custom">
+                    <input type="date" id="start-date" aria-label="Data de início">
+                    <span>até</span>
+                    <input type="date" id="end-date" aria-label="Data de fim">
+                    <button id="apply-custom-date">Aplicar</button>
+                </div>
+            </section>
             
             <section id="dashboard-grid" class="hidden">
                 <div class="metric-card">
@@ -313,6 +393,17 @@
                     </h2>
                     <p id="scheduled-value">-</p>
                 </div>
+                 <div class="metric-card">
+                    <h2>
+                        <span>Agendamentos Fora do Horário</span>
+                        <span id="off-hours-scheduled-subtitle" class="metric-card-subtitle"></span>
+                    </h2>
+                    <p id="off-hours-scheduled-value">-</p>
+                </div>
+                <div class="metric-card">
+                    <h2>Tempo Médio de Resposta (IA)</h2>
+                    <p id="avg-response-time-value">-</p>
+                </div>
                 <div class="metric-card">
                     <h2>
                         <span>Leads Recuperados</span>
@@ -321,7 +412,7 @@
                     <p id="recovered-value">-</p>
                 </div>
                 <div class="metric-card">
-                    <h2>Total de Leads</h2>
+                    <h2>Total de Leads (Criados)</h2>
                     <p id="total-leads-value">-</p>
                 </div>
             </section>
@@ -359,14 +450,16 @@
             const adminManagementSection = document.getElementById('admin-management-section');
             const mainTitle = document.getElementById('main-title');
             const clientList = document.getElementById('client-list');
+            const dateFilterSection = document.getElementById('date-filter-section');
             
             const allInputIds = [
                 'client-name', 'supabase-url', 'supabase-key', 'leads-table-name', 
-                'leads-id-column', 'qualified-column', 'followup-column', 
-                'last-inbound-column', 'last-outbound-column', 'chats-table-name', 
+                'leads-id-column', 'qualified-column', 'followup-column', 'leads-created-at-column',
+                'last-inbound-column', 'last-outbound-column', 'chats-table-name', 'chats-created-at-column',
                 'chats-lead-id-column', 'json-message-column', 'json-content-key', 
-                'json-sender-key', 'human-sender-value', 'scheduling-keywords', 
-                'incoming-shots-table-name', 'shots-table-name', 'shot-attempt-column', 'shot-completed-column'
+                'json-sender-key', 'human-sender-value', 'scheduling-keywords', 'off-hours-keyword',
+                'incoming-shots-table-name', 'shots-table-name', 'shot-attempt-column', 'shot-completed-column',
+                'n8n-executions-table-name', 'execution-started-at-column', 'execution-finished-at-column'
             ];
             const allInputs = allInputIds.reduce((acc, id) => {
                 acc[id] = document.getElementById(id);
@@ -380,19 +473,25 @@
                 leadsIdColumn: 'numero',
                 qualifiedColumn: 'atendimento_finalizado',
                 followupColumn: 'followup',
+                leadsCreatedAtColumn: 'created_at',
                 lastInboundColumn: 'last_inbound_at',
                 lastOutboundColumn: 'last_outbound_at',
                 chatsTableName: 'chats_sdr',
+                chatsCreatedAtColumn: 'created_at',
                 chatsLeadIdColumn: 'session_id',
                 jsonMessageColumn: 'message',
                 jsonContentKey: 'content',
                 jsonSenderKey: 'type',
                 humanSenderValue: 'human',
                 schedulingKeywords: 'confirmado, agendado, combinado',
+                offHoursKeyword: '*Lead qualificado*',
                 incomingShotsTableName: 'disparo_entrada',
                 shotsTableName: 'disparo_saida',
                 shotAttemptColumn: 'created_at',
                 shotCompletedColumn: 'conseguiu',
+                n8nExecutionsTableName: 'n8n_executions',
+                executionStartedAtColumn: 'started_at',
+                executionFinishedAtColumn: 'stopped_at',
             };
 
             // --- Elementos do Dashboard ---
@@ -407,22 +506,27 @@
             const recoveredSubtitleEl = document.getElementById('recovered-subtitle');
             const shotsWithReplyEl = document.getElementById('shots-with-reply-value');
             const shotsWithReplySubtitleEl = document.getElementById('shots-with-reply-subtitle');
-            // Novos elementos de Disparos
             const totalPlannedShotsEl = document.getElementById('total-planned-shots-value');
             const pendingShotsEl = document.getElementById('pending-shots-value');
             const successfulShotsEl = document.getElementById('successful-shots-value');
             const successfulShotsSubtitleEl = document.getElementById('successful-shots-subtitle');
             const failedShotsEl = document.getElementById('failed-shots-value');
             const failedShotsSubtitleEl = document.getElementById('failed-shots-subtitle');
+            const avgResponseTimeEl = document.getElementById('avg-response-time-value');
+            const offHoursScheduledEl = document.getElementById('off-hours-scheduled-value');
+            const offHoursScheduledSubtitleEl = document.getElementById('off-hours-scheduled-subtitle');
 
             let supabaseClient = null;
             let realtimeChannels = [];
             const CLIENT_CONFIGS_KEY = 'supabase_dashboard_configs';
+            let maxTotalPlannedShots = 0;
+            let dateRange = { start: null, end: null };
 
             function initApp() {
+                setupDateFilterListeners();
                 const hash = window.location.hash;
                 if (hash && hash.startsWith('#config=')) {
-                    handleClientMode(hash.substring(8)); // remove #config=
+                    handleClientMode(hash.substring(8));
                 } else {
                     handleAdminMode();
                 }
@@ -436,23 +540,15 @@
                 try {
                     const configJson = atob(encodedConfig);
                     const partialConfig = JSON.parse(configJson);
-                    
-                    // Merge partial config from URL with defaults to get the full config
                     const config = { ...DEFAULTS, ...partialConfig };
                     
-                    if (config.clientName) {
-                        mainTitle.textContent = `Dashboard de Leads - ${config.clientName}`;
-                    }
+                    if (config.clientName) mainTitle.textContent = `Dashboard de Leads - ${config.clientName}`;
 
-                    // Preencher o formulário (oculto) para que a lógica de conexão funcione
                     Object.keys(config).forEach(key => {
                         const inputId = key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
-                        if(allInputs[inputId]) {
-                            allInputs[inputId].value = config[key];
-                        }
+                        if(allInputs[inputId]) allInputs[inputId].value = config[key];
                     });
                     
-                    // Iniciar a conexão automaticamente
                     connectAndLoad(config);
 
                 } catch (error) {
@@ -474,17 +570,10 @@
                 saveClientBtn.addEventListener('click', () => {
                     const config = getFormConfig();
                     if (!validateConfig(config, false)) return;
-                    
                     const configs = getSavedConfigs();
-                    
-                    // Se já existir, atualiza. Senão, adiciona.
                     const existingIndex = configs.findIndex(c => c.id === config.id);
-                    if (existingIndex > -1) {
-                        configs[existingIndex] = config;
-                    } else {
-                        configs.push(config);
-                    }
-                    
+                    if (existingIndex > -1) configs[existingIndex] = config;
+                    else configs.push(config);
                     saveConfigs(configs);
                     renderClientList();
                     showStatus(`Configuração para "${config.clientName}" salva com sucesso!`, 'success');
@@ -492,19 +581,25 @@
             }
 
             async function connectAndLoad(config) {
+                 maxTotalPlannedShots = 0;
                  setConnectingState(true);
                 try {
-                    console.log('Creating Supabase client with URL:', config.supabaseUrl);
                     supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseKey, {
                         auth: { persistSession: false, autoRefreshToken: false }
                     });
-                    console.log('Supabase client created successfully.');
-
-                    await loadMetrics(config);
+                    
+                    // Default to 'all' on first load
+                    if (!dateRange.start && !document.querySelector('.date-filter-buttons button.active')) {
+                         document.querySelector('#date-filter-section [data-period="all"]').click();
+                    } else {
+                         await loadMetrics(config, dateRange);
+                    }
+                    
                     setupRealTimeSubscription(config);
                     
                     showStatus('Conectado com sucesso! Exibindo métricas.', 'success');
                     dashboardGrid.classList.remove('hidden');
+                    dateFilterSection.classList.remove('hidden');
 
                 } catch (error) {
                     console.error('Connection or fetch error:', error);
@@ -520,20 +615,68 @@
                     }
                     showStatus(userFriendlyError, 'error');
                     dashboardGrid.classList.add('hidden');
+                    dateFilterSection.classList.add('hidden');
                 } finally {
                     setConnectingState(false);
                 }
             }
-            
-            // --- Funções de Gerenciamento de Clientes (Admin) ---
+
+            function setupDateFilterListeners() {
+                const buttons = dateFilterSection.querySelectorAll('.date-filter-buttons button');
+                const startDateInput = document.getElementById('start-date');
+                const endDateInput = document.getElementById('end-date');
+                
+                buttons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        buttons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        const period = button.dataset.period;
+                        const now = new Date();
+                        let start = new Date();
+                        let end = new Date();
+
+                        if (period === 'all') {
+                            start = null;
+                            end = null;
+                            startDateInput.value = '';
+                            endDateInput.value = '';
+                        } else if (period === 'today') {
+                            start.setHours(0, 0, 0, 0);
+                            end.setHours(23, 59, 59, 999);
+                        } else if (period === 'week') {
+                            start.setDate(now.getDate() - now.getDay());
+                            start.setHours(0, 0, 0, 0);
+                        } else if (period === 'month') {
+                            start.setDate(1);
+                            start.setHours(0, 0, 0, 0);
+                        }
+                        
+                        dateRange = { start, end };
+                        if (start) startDateInput.valueAsDate = start;
+                        if (end) endDateInput.valueAsDate = end;
+                        
+                        if (supabaseClient) loadMetrics(getFormConfig(), dateRange);
+                    });
+                });
+
+                document.getElementById('apply-custom-date').addEventListener('click', () => {
+                    buttons.forEach(btn => btn.classList.remove('active'));
+                    const start = startDateInput.valueAsDate;
+                    const end = endDateInput.valueAsDate;
+                    if (start && end) {
+                        start.setHours(0, 0, 0, 0);
+                        end.setHours(23, 59, 59, 999);
+                        dateRange = { start, end };
+                        if (supabaseClient) loadMetrics(getFormConfig(), dateRange);
+                    }
+                });
+            }
             
             function getSavedConfigs() {
                 try {
                     const configs = localStorage.getItem(CLIENT_CONFIGS_KEY);
                     return configs ? JSON.parse(configs) : [];
-                } catch (e) {
-                    return [];
-                }
+                } catch (e) { return []; }
             }
             
             function saveConfigs(configs) {
@@ -547,7 +690,6 @@
                     clientList.innerHTML = '<p style="text-align: center; color: var(--text-light-color);">Nenhuma configuração de cliente salva.</p>';
                     return;
                 }
-                
                 configs.forEach(config => {
                     const li = document.createElement('li');
                     li.className = 'client-item';
@@ -561,91 +703,60 @@
                     `;
                     clientList.appendChild(li);
                 });
-                
-                // Add event listeners
                 clientList.addEventListener('click', (e) => {
                     const target = e.target;
                     const id = target.dataset.id;
                     if (!id) return;
+                    const config = configs.find(c => c.id === id);
+                    if (!config) return;
                     
                     if (target.classList.contains('load-btn')) {
-                        const config = configs.find(c => c.id === id);
-                        if (config) {
-                             Object.keys(config).forEach(key => {
-                                const inputId = key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
-                                if (allInputs[inputId]) {
-                                    allInputs[inputId].value = config[key];
-                                }
-                            });
-                            showStatus(`Configuração de "${config.clientName}" carregada.`, 'success');
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }
+                         Object.keys(config).forEach(key => {
+                            const inputId = key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
+                            if (allInputs[inputId]) allInputs[inputId].value = config[key];
+                        });
+                        showStatus(`Configuração de "${config.clientName}" carregada.`, 'success');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
                     } else if (target.classList.contains('share-btn')) {
-                         const config = configs.find(c => c.id === id);
-                         if (config) {
-                            const shortenedConfig = {};
-
-                            // Always include essential fields
-                            shortenedConfig.clientName = config.clientName;
-                            shortenedConfig.supabaseUrl = config.supabaseUrl;
-                            shortenedConfig.supabaseKey = config.supabaseKey;
-
-                            // Include other fields only if they differ from the default value
-                            for (const key in DEFAULTS) {
-                                if (config.hasOwnProperty(key) && config[key] !== DEFAULTS[key]) {
-                                    shortenedConfig[key] = config[key];
-                                }
+                        const shortenedConfig = {};
+                        Object.keys(config).forEach(key => {
+                            if (key !== 'id' && DEFAULTS[key] !== config[key]) {
+                                shortenedConfig[key] = config[key];
                             }
-                            
-                            const jsonString = JSON.stringify(shortenedConfig);
-                            const encoded = btoa(jsonString);
-                            const baseUrl = window.location.href.split('#')[0];
-                            const url = `${baseUrl}#config=${encoded}`;
-                            navigator.clipboard.writeText(url).then(() => {
-                                showStatus(`Link curto para "${config.clientName}" copiado para a área de transferência!`, 'success');
-                            }).catch(() => {
-                                showStatus(`Não foi possível copiar o link.`, 'error');
-                            });
-                         }
+                        });
+                        shortenedConfig.clientName = config.clientName; // Always include name
+                        const jsonString = JSON.stringify(shortenedConfig);
+                        const encoded = btoa(jsonString);
+                        const url = `${window.location.href.split('#')[0]}#config=${encoded}`;
+                        navigator.clipboard.writeText(url).then(() => {
+                            showStatus(`Link para "${config.clientName}" copiado!`, 'success');
+                        });
                     } else if (target.classList.contains('delete-btn')) {
-                        if (confirm(`Tem certeza que deseja excluir a configuração de "${configs.find(c => c.id === id).clientName}"?`)) {
-                            const newConfigs = configs.filter(c => c.id !== id);
-                            saveConfigs(newConfigs);
+                        if (confirm(`Excluir "${config.clientName}"?`)) {
+                            saveConfigs(configs.filter(c => c.id !== id));
                             renderClientList();
                         }
                     }
                 });
             }
 
-            /**
-             * Normaliza um número de telefone, removendo caracteres não numéricos
-             * e o "nono dígito" de celulares brasileiros.
-             * @param {string | number} phoneNumber O número a ser normalizado.
-             * @returns {string} O número normalizado.
-             */
             function normalizePhoneNumber(phoneNumber) {
                 if (!phoneNumber) return '';
-                // Remove tudo que não for dígito
                 let cleaned = String(phoneNumber).replace(/\D/g, '');
-                
-                // Remove o '9' extra de celulares brasileiros (formato 55XX9XXXXXXXX)
                 if (cleaned.startsWith('55') && cleaned.length === 13 && cleaned.charAt(4) === '9') {
                     cleaned = cleaned.substring(0, 4) + cleaned.substring(5);
                 }
-                
                 return cleaned;
             }
             
-            // --- Funções Auxiliares de UI ---
             function setConnectingState(isConnecting) {
                 connectBtn.disabled = isConnecting;
                 connectBtn.textContent = isConnecting ? 'Conectando...' : 'Conectar e Testar';
+                loader.classList.toggle('hidden', !isConnecting);
                 if (isConnecting) {
                    statusMessage.textContent = '';
-                   loader.classList.remove('hidden');
                    dashboardGrid.classList.add('hidden');
-                } else {
-                   loader.classList.add('hidden');
+                   dateFilterSection.classList.add('hidden');
                 }
             }
             
@@ -655,7 +766,6 @@
                 setTimeout(() => { if (statusMessage.textContent === message) statusMessage.textContent = ''; }, 5000);
             }
 
-            // --- Funções de Dados ---
             function getFormConfig() {
                 const config = {};
                 allInputIds.forEach(id => {
@@ -668,154 +778,221 @@
 
             function validateConfig(config, isTest) {
                 if (!config.clientName && !isTest) {
-                    showStatus('O Nome do Cliente é obrigatório para salvar.', 'error');
-                    return false;
+                    showStatus('O Nome do Cliente é obrigatório para salvar.', 'error'); return false;
                 }
                 if (!config.supabaseUrl || !config.supabaseKey || !config.leadsTableName || !config.leadsIdColumn) {
-                    showStatus('URL, Chave, Tabela de Leads e Coluna de ID de Leads são obrigatórios.', 'error');
-                    return false;
+                    showStatus('URL, Chave, Tabela de Leads e Coluna de ID de Leads são obrigatórios.', 'error'); return false;
                 }
                  if (!config.supabaseUrl.includes('supabase.co')) {
-                    showStatus('A URL do Supabase parece inválida.', 'error');
-                    return false;
+                    showStatus('A URL do Supabase parece inválida.', 'error'); return false;
                 }
-                // ... (outras validações)
                 return true;
             }
            
-            async function loadMetrics(config) {
-                console.log(`Fetching metrics from table: "${config.leadsTableName}"`);
+            async function loadMetrics(config, dateRange) {
+                console.log(`Fetching metrics from table: "${config.leadsTableName}" for period:`, dateRange.start ? dateRange : 'All time');
                 if (!supabaseClient) throw new Error('Supabase client not initialized.');
                 const {
-                    leadsTableName, leadsIdColumn, qualifiedColumn, followupColumn,
-                    chatsTableName, chatsLeadIdColumn, jsonMessageColumn, jsonContentKey, jsonSenderKey, humanSenderValue, schedulingKeywords,
-                    incomingShotsTableName, shotsTableName, shotAttemptColumn, shotCompletedColumn
+                    leadsTableName, leadsIdColumn, qualifiedColumn, followupColumn, leadsCreatedAtColumn,
+                    chatsTableName, chatsLeadIdColumn, jsonMessageColumn, jsonContentKey, jsonSenderKey, humanSenderValue, schedulingKeywords, chatsCreatedAtColumn, offHoursKeyword,
+                    incomingShotsTableName, shotsTableName, shotAttemptColumn, shotCompletedColumn,
+                    n8nExecutionsTableName, executionStartedAtColumn, executionFinishedAtColumn
                 } = config;
-
-                // 1. Fetch main leads data.
-                const { data: leadsData, error: leadsError, count: totalLeads } = await supabaseClient
-                    .from(leadsTableName)
-                    .select('*', { count: 'exact' })
-                    .not(leadsIdColumn, 'is', null)
-
-                if (leadsError) {
-                    console.error('Error fetching leads data:', leadsError);
-                    throw new Error(`Erro ao buscar dados de leads: ${leadsError.message}`);
-                }
                 
-                if (!leadsData) {
-                    // Handle no leads data gracefully
-                    console.warn("No leads data found. Some metrics will be zero.");
-                }
-                
-                const validLeadIds = new Set(leadsData.map(l => normalizePhoneNumber(l[leadsIdColumn])).filter(Boolean));
+                const addDateFilter = (query, column) => {
+                    if (dateRange && dateRange.start && dateRange.end && column) {
+                        return query.gte(column, dateRange.start.toISOString()).lte(column, dateRange.end.toISOString());
+                    }
+                    return query;
+                };
 
-                // 2. Define data fetching promises to run in parallel.
+                // 1. Fetch TOTAL LEADS Count (Leads CREATED in this period)
+                // This is a cohort metric: "How many new leads entered the system?"
+                let leadsCountQuery = supabaseClient.from(leadsTableName).select(leadsIdColumn, { count: 'exact', head: true }).not(leadsIdColumn, 'is', null);
+                leadsCountQuery = addDateFilter(leadsCountQuery, leadsCreatedAtColumn);
+                const { count: totalLeads, error: leadsError } = await leadsCountQuery;
+                if (leadsError) throw new Error(`Erro ao buscar contagem de leads: ${leadsError.message}`);
+
+                // 2. Define data fetching promises for ACTIVITY metrics (Shots, Chats, Scheduling)
                 const fetchAllChatMessages = async () => {
-                    const requiredFields = [chatsTableName, chatsLeadIdColumn, jsonMessageColumn, jsonContentKey, jsonSenderKey, humanSenderValue];
-                    if (requiredFields.some(f => !f)) return [];
+                    const required = [chatsTableName, chatsLeadIdColumn, jsonMessageColumn, jsonContentKey, jsonSenderKey, humanSenderValue, chatsCreatedAtColumn];
+                    if (required.some(f => !f)) return [];
                     let query = supabaseClient.from(chatsTableName).select(`${chatsLeadIdColumn}, ${jsonMessageColumn}`).eq(`${jsonMessageColumn}->>${jsonSenderKey}`, humanSenderValue);
-                    const patternsToExclude = [`%pesquisa rápida com meus clientes%`, `%tu pode responder rapidinho?%`, `%você pode responder rapidinho?%`];
-                    patternsToExclude.forEach(pattern => {
-                        query = query.not(`${jsonMessageColumn}->>${jsonContentKey}`, 'ilike', pattern);
-                    });
-                    const { data: messages, error } = await query;
+                    const patterns = [`%pesquisa rápida com meus clientes%`, `%tu pode responder rapidinho?%`, `%você pode responder rapidinho?%`];
+                    patterns.forEach(p => { query = query.not(`${jsonMessageColumn}->>${jsonContentKey}`, 'ilike', p); });
+                    query = addDateFilter(query, chatsCreatedAtColumn);
+                    const { data, error } = await query;
                     if (error) throw new Error(`Erro ao buscar dados de chats: ${error.message}`);
-                    return messages || [];
+                    return data || [];
                 };
             
                 const fetchScheduledData = async () => {
-                    if (!schedulingKeywords || !chatsTableName || !jsonMessageColumn || !jsonContentKey || !chatsLeadIdColumn) return { data: [], error: null };
+                    const required = [schedulingKeywords, chatsTableName, jsonMessageColumn, jsonContentKey, chatsLeadIdColumn, chatsCreatedAtColumn];
+                    if (required.some(f => !f)) return { data: [] };
                     const keywords = schedulingKeywords.split(',').map(k => k.trim()).filter(k => k);
-                    if (keywords.length === 0) return { data: [], error: null };
+                    if (keywords.length === 0) return { data: [] };
                     const orFilter = keywords.map(keyword => `${jsonMessageColumn}->>${jsonContentKey}.ilike.%${keyword}%`).join(',');
-                    return supabaseClient.from(chatsTableName).select(chatsLeadIdColumn).or(orFilter);
+                    let query = supabaseClient.from(chatsTableName).select(chatsLeadIdColumn).or(orFilter);
+                    query = addDateFilter(query, chatsCreatedAtColumn);
+                    return query;
                 };
 
                 const fetchOutgoingShotsData = async () => {
-                    const emptyResult = { attempts: 0, completed: 0, failed: 0, successfulLeads: [] };
-                    if (!shotsTableName || !shotAttemptColumn || !shotCompletedColumn) return emptyResult;
+                    const empty = { attempts: 0, completed: 0, failed: 0, successfulLeads: [] };
+                    if (!shotsTableName || !shotAttemptColumn || !shotCompletedColumn) return empty;
 
-                    const { count: attempts, error: attemptsError } = await supabaseClient.from(shotsTableName).select('*', { count: 'exact', head: true }).not(shotAttemptColumn, 'is', null);
-                    if (attemptsError) throw new Error(`Erro ao contar tentativas de disparo: ${attemptsError.message}`);
+                    let attemptsQuery = supabaseClient.from(shotsTableName).select('*', { count: 'exact', head: true }).not(shotAttemptColumn, 'is', null);
+                    attemptsQuery = addDateFilter(attemptsQuery, shotAttemptColumn);
+                    const { count: attempts, error: errA } = await attemptsQuery;
+                    if (errA) throw new Error(`Erro ao contar tentativas de disparo: ${errA.message}`);
 
-                    const { data: completedData, count: completed, error: completedError } = await supabaseClient.from(shotsTableName).select(leadsIdColumn, { count: 'exact' }).not(shotAttemptColumn, 'is', null).eq(shotCompletedColumn, true);
-                    if (completedError) throw new Error(`Erro ao buscar disparos concluídos: ${completedError.message}`);
+                    let completedQuery = supabaseClient.from(shotsTableName).select(leadsIdColumn, { count: 'exact' }).not(shotAttemptColumn, 'is', null).eq(shotCompletedColumn, true);
+                    completedQuery = addDateFilter(completedQuery, shotAttemptColumn);
+                    const { data: completedData, count: completed, error: errC } = await completedQuery;
+                    if (errC) throw new Error(`Erro ao buscar disparos concluídos: ${errC.message}`);
 
-                    const { count: failed, error: failedError } = await supabaseClient.from(shotsTableName).select('*', { count: 'exact', head: true }).not(shotAttemptColumn, 'is', null).eq(shotCompletedColumn, false);
-                    if (failedError) throw new Error(`Erro ao contar disparos com falha: ${failedError.message}`);
+                    let failedQuery = supabaseClient.from(shotsTableName).select('*', { count: 'exact', head: true }).not(shotAttemptColumn, 'is', null).eq(shotCompletedColumn, false);
+                    failedQuery = addDateFilter(failedQuery, shotAttemptColumn);
+                    const { count: failed, error: errF } = await failedQuery;
+                    if (errF) throw new Error(`Erro ao contar disparos com falha: ${errF.message}`);
                     
-                    const successfulLeads = completedData ? completedData.map(item => normalizePhoneNumber(item[leadsIdColumn])) : [];
-                    
-                    return { attempts: attempts || 0, completed: completed || 0, failed: failed || 0, successfulLeads };
+                    return { attempts: attempts || 0, completed: completed || 0, failed: failed || 0, successfulLeads: (completedData || []).map(item => normalizePhoneNumber(item[leadsIdColumn])) };
                 };
                 
                 const fetchIncomingShotsCount = async () => {
                     if (!incomingShotsTableName) return 0;
-                    const { count, error } = await supabaseClient.from(incomingShotsTableName).select('*', { count: 'exact', head: true });
+                    // Pending shots usually represents current backlog.
+                    // To ensure "Total Planned" (Attempts + Pending) respects the date filter, we must filter pending shots by their creation date too.
+                    let query = supabaseClient.from(incomingShotsTableName).select('*', { count: 'exact', head: true });
+                    query = addDateFilter(query, shotAttemptColumn || 'created_at');
+                    const { count, error } = await query;
                     if (error) throw new Error(`Erro ao contar disparos pendentes: ${error.message}`);
                     return count || 0;
                 };
+
+                const fetchAvgResponseTime = async () => {
+                    const required = [n8nExecutionsTableName, executionStartedAtColumn, executionFinishedAtColumn];
+                    if (required.some(f => !f)) return 0;
+                    let query = supabaseClient.from(n8nExecutionsTableName).select(`${executionStartedAtColumn}, ${executionFinishedAtColumn}`);
+                    query = addDateFilter(query, executionStartedAtColumn);
+                    const { data, error } = await query;
+                    if (error) throw new Error(`Erro ao buscar execuções: ${error.message}`);
+                    if (!data || data.length === 0) return 0;
+                    const durations = data.map(ex => {
+                        const start = new Date(ex[executionStartedAtColumn]).getTime();
+                        const finish = new Date(ex[executionFinishedAtColumn]).getTime();
+                        if (isNaN(start) || isNaN(finish) || finish <= start) return 0;
+                        return (finish - start) / 1000;
+                    }).filter(d => d > 0);
+                    return durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
+                };
+
+                const fetchOffHoursScheduling = async () => {
+                    const required = [offHoursKeyword, chatsTableName, jsonMessageColumn, jsonContentKey, chatsCreatedAtColumn];
+                    if (required.some(f => !f)) return 0;
+                    let query = supabaseClient.from(chatsTableName).select(`${chatsCreatedAtColumn}`)
+                        .ilike(`${jsonMessageColumn}->>${jsonContentKey}`, `%${offHoursKeyword}%`);
+                    query = addDateFilter(query, chatsCreatedAtColumn);
+                    const { data, error } = await query;
+                    if (error) throw new Error(`Erro ao buscar qualificações fora de hora: ${error.message}`);
+                    if (!data) return 0;
+                    return data.filter(item => {
+                        const utcDate = new Date(item[chatsCreatedAtColumn]);
+                        if (isNaN(utcDate.getTime())) return false;
+                        const spFormatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', weekday: 'short', hour: 'numeric', hour12: false });
+                        const parts = spFormatter.formatToParts(utcDate);
+                        const day = parts.find(p => p.type === 'weekday').value;
+                        const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+                        return (day === 'Sat' || day === 'Sun') || (hour < 9 || hour >= 18);
+                    }).length;
+                };
             
-                const [ allMessages, { data: scheduledData, error: scheduledError }, outgoingShots, pendingShots ] = await Promise.all([
-                    fetchAllChatMessages(), fetchScheduledData(), fetchOutgoingShotsData(), fetchIncomingShotsCount()
+                const [ allMessages, { data: scheduledData, error: scheduledError }, outgoingShots, pendingShots, avgResponseTime, offHoursCount ] = await Promise.all([
+                    fetchAllChatMessages(), fetchScheduledData(), fetchOutgoingShotsData(), fetchIncomingShotsCount(), fetchAvgResponseTime(), fetchOffHoursScheduling()
                 ]);
             
                 if (scheduledError) throw new Error(`Erro ao buscar agendamentos: ${scheduledError.message}`);
+
+                // 3. LEAD STATUS LOOKUP (CRITICAL FIX FOR DATE FILTERS)
+                // We need to check the status (Qualified, Followup, etc.) of the leads involved in the ACTIVITIES above.
+                // We do NOT filter this lookup by "Lead Created At", because we want to know if a lead contacted TODAY is qualified, regardless of when they were born.
+                
+                const activeLeadIds = new Set();
+                outgoingShots.successfulLeads.forEach(id => activeLeadIds.add(id));
+                allMessages.forEach(msg => activeLeadIds.add(normalizePhoneNumber(msg[chatsLeadIdColumn])));
+                (scheduledData || []).forEach(item => activeLeadIds.add(normalizePhoneNumber(item[chatsLeadIdColumn])));
+
+                // Convert Set to Array for .in() query (chunking if necessary, but assuming manageable size for dashboard)
+                const uniqueActiveIds = Array.from(activeLeadIds).filter(Boolean);
+                const leadStatusMap = new Map();
+
+                if (uniqueActiveIds.length > 0) {
+                    // Fetch status for leads involved in current period's activity
+                    // Chunking to avoid URL length issues if > 200 items (simple implementation)
+                    const chunkSize = 200;
+                    for (let i = 0; i < uniqueActiveIds.length; i += chunkSize) {
+                        const chunk = uniqueActiveIds.slice(i, i + chunkSize);
+                        const { data: statusData, error: statusError } = await supabaseClient
+                            .from(leadsTableName)
+                            .select(`${leadsIdColumn}, ${qualifiedColumn}, ${followupColumn}`)
+                            .in(leadsIdColumn, chunk);
+                        
+                        if (!statusError && statusData) {
+                            statusData.forEach(l => {
+                                leadStatusMap.set(normalizePhoneNumber(l[leadsIdColumn]), l);
+                            });
+                        }
+                    }
+                }
+
+                // 4. Calculate Metrics based on leadStatusMap (Dictionary)
                 
                 const totalPlannedShots = (outgoingShots.attempts || 0) + (pendingShots || 0);
-
-                const successfulShotLeadIdsSet = new Set(outgoingShots.successfulLeads.filter(Boolean));
-                const qualifiedLeadIdsSet = new Set(
-                    leadsData
-                        .filter(lead => qualifiedColumn && lead[qualifiedColumn] === true)
-                        .map(lead => normalizePhoneNumber(lead[leadsIdColumn]))
-                        .filter(Boolean)
-                );
-
-                const qualifiedFromShotsNumerator = [...successfulShotLeadIdsSet].filter(id => qualifiedLeadIdsSet.has(id)).length;
-                const qualifiedFromShotsDenominator = outgoingShots.completed;
-
-                const leadsFromShotsIds = new Set([...successfulShotLeadIdsSet].filter(id => validLeadIds.has(id)));
-                const shotsWithReplyNumerator = leadsFromShotsIds.size;
-                const shotsWithReplyDenominator = successfulShotLeadIdsSet.size;
                 
+                // Qualified Leads: Leads who received a shot in this period AND are marked qualified (regardless of creation date)
+                const qualifiedFromShotsNumerator = outgoingShots.successfulLeads.filter(id => {
+                    const lead = leadStatusMap.get(id);
+                    return lead && lead[qualifiedColumn] === true;
+                }).length;
+
+                // Shots with Reply: Shots sent in this period where the Lead exists in our DB (Map check confirms existence)
+                const shotsWithReplyNumerator = outgoingShots.successfulLeads.filter(id => leadStatusMap.has(id)).length;
+                
+                // Second Message: Leads active in this period with >= 2 messages
                 const messageCountsByLead = allMessages.reduce((acc, msg) => {
                     const leadId = normalizePhoneNumber(msg[chatsLeadIdColumn]);
                     if (leadId) acc[leadId] = (acc[leadId] || 0) + 1;
                     return acc;
                 }, {});
-                const secondMessageNumerator = [...leadsFromShotsIds].filter(id => (messageCountsByLead[id] || 0) >= 2).length;
-                const secondMessageDenominator = shotsWithReplyNumerator;
+                // For the "2nd Message" metric, we usually look at the pool of leads who received shots.
+                const secondMessageNumerator = outgoingShots.successfulLeads.filter(id => (messageCountsByLead[id] || 0) >= 2).length;
+
+                const scheduledCount = new Set((scheduledData || []).map(item => normalizePhoneNumber(item[chatsLeadIdColumn]))).size;
                 
-                const scheduledLeads = new Set(scheduledData ? scheduledData.map(item => normalizePhoneNumber(item[chatsLeadIdColumn])) : []);
-                const scheduledCount = scheduledLeads.size;
-                
-                const recoveredCount = followupColumn && qualifiedColumn
-                    ? leadsData.filter(lead => lead[followupColumn] && lead[qualifiedColumn] === true).length
-                    : 0;
+                // Recovered: Leads active in this period who are marked recovered
+                // (Note: This is an approximation. Ideally we'd filter by 'recovered_at' timestamp, but we use the active pool + status flag)
+                let recoveredCount = 0;
+                if (followupColumn && qualifiedColumn) {
+                    recoveredCount = Array.from(leadStatusMap.values()).filter(lead => lead[followupColumn] && lead[qualifiedColumn] === true).length;
+                }
                 
                 updateUI({
-                    total: totalLeads || 0,
-                    totalPlanned: totalPlannedShots,
-                    pending: pendingShots,
-                    qualified: { numerator: qualifiedFromShotsNumerator, denominator: qualifiedFromShotsDenominator },
-                    secondMessageData: { numerator: secondMessageNumerator, denominator: secondMessageDenominator },
+                    total: totalLeads || 0, totalPlanned: totalPlannedShots, pending: pendingShots, avgResponseTime, offHoursCount,
+                    qualified: { numerator: qualifiedFromShotsNumerator, denominator: outgoingShots.completed },
+                    secondMessageData: { numerator: secondMessageNumerator, denominator: shotsWithReplyNumerator },
                     scheduled: { numerator: scheduledCount, denominator: shotsWithReplyNumerator },
                     recovered: { numerator: recoveredCount, denominator: shotsWithReplyNumerator },
-                    shotsData: { 
-                        attempts: outgoingShots.attempts, 
-                        completed: outgoingShots.completed,
-                        failed: outgoingShots.failed
-                    },
-                    shotsWithReplyData: { numerator: shotsWithReplyNumerator, denominator: shotsWithReplyDenominator }
+                    shotsData: { attempts: outgoingShots.attempts, completed: outgoingShots.completed, failed: outgoingShots.failed },
+                    shotsWithReplyData: { numerator: shotsWithReplyNumerator, denominator: outgoingShots.successfulLeads.length }
                 });
             }
 
             function updateUI(metrics) {
                 totalLeadsEl.textContent = metrics.total;
-                totalPlannedShotsEl.textContent = metrics.totalPlanned;
+                maxTotalPlannedShots = Math.max(maxTotalPlannedShots, metrics.totalPlanned || 0);
+                totalPlannedShotsEl.textContent = maxTotalPlannedShots;
                 pendingShotsEl.textContent = metrics.pending;
+                avgResponseTimeEl.textContent = metrics.avgResponseTime > 0 ? `${metrics.avgResponseTime.toFixed(1)}s` : '-';
                 
                 const updateCard = (el, subEl, { numerator, denominator }) => {
                     const percent = denominator > 0 ? (numerator / denominator) * 100 : 0;
@@ -830,6 +1007,7 @@
                 updateCard(successfulShotsEl, successfulShotsSubtitleEl, { numerator: metrics.shotsData.completed, denominator: metrics.shotsData.attempts });
                 updateCard(failedShotsEl, failedShotsSubtitleEl, { numerator: metrics.shotsData.failed, denominator: metrics.shotsData.attempts });
                 updateCard(shotsWithReplyEl, shotsWithReplySubtitleEl, metrics.shotsWithReplyData);
+                updateCard(offHoursScheduledEl, offHoursScheduledSubtitleEl, { numerator: metrics.offHoursCount, denominator: metrics.qualified.numerator });
             }
 
             function setupRealTimeSubscription(config) {
@@ -838,27 +1016,19 @@
                     realtimeChannels = [];
                 }
                 
-                const tablesToSubscribe = [config.leadsTableName, config.chatsTableName, config.shotsTableName, config.incomingShotsTableName].filter(Boolean);
-                const uniqueTables = [...new Set(tablesToSubscribe)];
+                const tables = [config.leadsTableName, config.chatsTableName, config.shotsTableName, config.incomingShotsTableName].filter(Boolean);
+                const uniqueTables = [...new Set(tables)];
 
                 uniqueTables.forEach(tableName => {
-                    console.log(`Subscribing to changes on table: "${tableName}"`);
                     const channel = supabaseClient
                         .channel(`public:${tableName}`)
                         .on('postgres_changes', { event: '*', schema: 'public', table: tableName }, (payload) => {
                             console.log(`Real-time change detected on ${tableName}:`, payload);
-                            let currentConfig = getFormConfig();
-                             const hash = window.location.hash;
-                             if (hash && hash.startsWith('#config=')) {
-                                try { currentConfig = JSON.parse(atob(hash.substring(8))); } catch (e) {}
-                             }
-                            if (validateConfig(currentConfig, true)) {
-                                loadMetrics(currentConfig);
-                            }
+                            loadMetrics(getFormConfig(), dateRange);
                         })
                         .subscribe((status, err) => {
-                            if (status === 'SUBSCRIBED') console.log(`Successfully subscribed to real-time updates for ${tableName}!`);
-                            if (status === 'CHANNEL_ERROR') console.error(`Real-time subscription error for ${tableName}:`, err);
+                            if (status === 'SUBSCRIBED') console.log(`Successfully subscribed to ${tableName}!`);
+                            if (status === 'CHANNEL_ERROR') console.error(`Subscription error for ${tableName}:`, err);
                         });
                     realtimeChannels.push(channel);
                 });
