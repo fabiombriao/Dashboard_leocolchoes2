@@ -861,11 +861,8 @@
                 
                 const fetchIncomingShotsCount = async () => {
                     if (!incomingShotsTableName) return 0;
-                    // Pending shots usually represents current backlog.
-                    // To ensure "Total Planned" (Attempts + Pending) respects the date filter, we must filter pending shots by their creation date too.
-                    let query = supabaseClient.from(incomingShotsTableName).select('*', { count: 'exact', head: true });
-                    query = addDateFilter(query, shotAttemptColumn || 'created_at');
-                    const { count, error } = await query;
+                    // Pending shots usually represents current backlog, typically not filtered by date unless specifically asked for "pending created at"
+                    const { count, error } = await supabaseClient.from(incomingShotsTableName).select('*', { count: 'exact', head: true });
                     if (error) throw new Error(`Erro ao contar disparos pendentes: ${error.message}`);
                     return count || 0;
                 };
